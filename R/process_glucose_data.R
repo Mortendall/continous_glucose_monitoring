@@ -476,14 +476,16 @@ find_peaks_and_nadirs <- function(x, max_min_window)
   roll_fun <- function(which_fun){
     which_fun_na_fix <- function(x) {
       out <- which_fun(x)
+      # Always return a number (NA_real_, not NA): if the type differs between
+      # windows, data.table >= 1.18 returns a list instead of a vector
       if (length(out) == 0) {
-        NA
+        NA_real_
       } else {
-        out
+        as.numeric(out)
       }
     }
-    out <- data.table::frollapply(x = c(rep(NA, max_min_window/2), x$excursion, rep(NA, max_min_window/2)),
-                                        n = max_min_window, 
+    out <- data.table::frollapply(c(rep(NA, max_min_window/2), x$excursion, rep(NA, max_min_window/2)),
+                                        max_min_window, 
                                         FUN = which_fun_na_fix, 
                                         fill = NA,
                                         align = "center"
@@ -525,8 +527,8 @@ find_peaks_and_nadirs <- function(x, max_min_window)
     any(abs(window[-midpoint] - window[midpoint]) < 10^-4)
   }
   
-  duplicate_peak <- data.table::frollapply(x = c(rep(NA, midpoint), x$excursion),
-                                          n = midpoint, 
+  duplicate_peak <- data.table::frollapply(c(rep(NA, midpoint), x$excursion),
+                                          midpoint, 
                                           FUN = scan_fn, 
                                           fill = NA,
                                           align = "right"
